@@ -34,6 +34,8 @@ module.exports = function makeRouterWithSockets (io) {
   router.get('/', respondWithAllTweets);
   router.get('/tweets', respondWithAllTweets);
 
+
+
   // single-user page
   router.get('/users/:username', function(req, res, next){
     client.query('select tweets.id as tweetID, tweets.content as content, users.name as name, users.pictureurl as pictureurl, users.id as person from tweets inner join users on tweets.userid=users.id where users.name=$1', [req.params.username], function(err,data){
@@ -49,7 +51,7 @@ module.exports = function makeRouterWithSockets (io) {
 
   // single-tweet page
   router.get('/tweets/:id', function(req, res, next){
-    client.query('select tweets.id as tweetID, tweets.content as content, users.name as name, users.pictureurl as pictureurl, users.id as person from tweets inner join users on tweets.userid=users.id where tweets.id = $1', [req.params.id], function(err,data){
+    client.query('select tweets.id as tweetID, tweets.content as content, users.name as name, users.pictureurl as pictureurl, users.id as person from tweets inner join users on tweets.userid=users.id where tweets.id =  $1', [req.params.id], function(err,data){
       if (err) return next(err) ;
       res.render('index', {
         title: 'Twitter.js',
@@ -73,6 +75,37 @@ module.exports = function makeRouterWithSockets (io) {
     
     
   });
+
+    router.get('/delete/:id', function(req, res, next){
+    // var newTweet = tweetBank.add(req.body.name, req.body.content);
+
+
+      client.query("DELETE FROM tweets where id=$1 ", [req.params.id], function(err,data){
+        if (err) return next(err) ;
+        //io.sockets.emit('new_tweet', data.rows);
+        res.redirect('/');
+      })
+    
+    
+    
+  });
+
+  router.post('/searchresults', function(req, res, next){
+// console.log(req.body.search);
+var newSearch= '%'+req.body.search+'%';
+console.log (newSearch);
+
+    client.query('select tweets.id as tweetID, tweets.content as content, users.name as name, users.pictureurl as pictureurl, users.id as person from tweets inner join users on tweets.userid=users.id where tweets.content LIKE  $1  OR users.name LIKE  $2', [ newSearch ,   newSearch ], function(err,data){
+      if (err) return next(err) ;
+      res.render('index', {
+        title: 'Twitter.js',
+        tweets: data.rows // an array of only one element ;-)
+      });
+    })
+    
+  });
+
+
 
   // // replaced this hard-coded route with general static routing in app.js
   // router.get('/stylesheets/style.css', function(req, res, next){
